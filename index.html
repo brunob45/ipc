@@ -22,16 +22,16 @@
       let PW = (reqFuel / nSquirts) + openTime;
 
       if (alternate) {
-        inj1 = gap * 0+'°';
-        inj2 = gap * 1+'°';
-        inj3 = gap * 2+'°';
-        inj4 = gap * 3+'°';
+        inj1 = gap * 0 + '°';
+        inj2 = gap * 1 + '°';
+        inj3 = gap * 2 + '°';
+        inj4 = gap * 3 + '°';
       }
       else {
-        inj1 = 0+'°';
-        inj2 = 0+'°';
-        inj3 = 0+'°';
-        inj4 = 0+'°';
+        inj1 = 0 + '°';
+        inj2 = 0 + '°';
+        inj3 = 0 + '°';
+        inj4 = 0 + '°';
       }
       if (nCylinders < 2) inj2 = "disabled";
       if (nCylinders < 3) inj3 = "disabled";
@@ -69,6 +69,11 @@
       background-color: #555;
     }
 
+    h1 {
+      font-size: 1.17em;
+      text-align: center;
+    }
+
     select {
       float: right;
     }
@@ -78,16 +83,23 @@
       text-align: right;
     }
 
-    div {
+    div.square {
+      border-radius: 5px;
+      padding: 5px;
       background-color: #aaa;
       width: max-content;
       margin: 0 auto;
+    }
+
+    div.centered {
+      text-align: center;
     }
   </style>
 </head>
 
 <body>
   <div id="constants" class="square">
+    <h1>Injector Pattern Calculator</h1>
     <p>
       Required Fuel Constant
       <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="check(this, 25.5)">
@@ -141,10 +153,15 @@
         <option value=4 selected>4-stroke</option>
       </select>
     </p>
-    <button type="button" onclick="compute()">Compute</button><br>
+    <div class="centered">
+      <button type="button" onclick="compute()">Compute</button><br>
+    </div>
   </div>
 
+  <div class="spacer" style="height: 5px;"></div>
+
   <div class="square">
+    <h1>Results</h1>
     <p id="errorMsg"></p>
     <p>PW:
       <b class="out" id="PW"></b>ms
