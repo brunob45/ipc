@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script>
+    function compute() {
+      let reqFuel = parseFloat(document.getElementById("reqFuel").value);
+      let openTime = parseFloat(document.getElementById("openTime").value);
+
+      let paired = document.getElementById("paired").value != 0;
+      let nCylinders = document.getElementById("nCylinders").value;
+      let nSquirts = document.getElementById("nSquirts").value;
+      let nStrokes = 4 / document.getElementById("nStrokes").value;
+      let alternate = document.getElementById("alternate").value != 0;
+
+      if (paired) {
+        nCylinders = Math.ceil(nCylinders / 2);
+      }
+
+      let inj1, inj2, inj3, inj4;
+      let gap = 720 / (nStrokes * nSquirts * nCylinders);
+      let PW = (reqFuel/nSquirts) + openTime;
+
+      if (alternate) {
+        inj1 = gap * 0;
+        inj2 = gap * 1;
+        inj3 = gap * 2;
+        inj4 = gap * 3;
+      }
+      else {
+        inj1 = 0;
+        inj2 = 0;
+        inj3 = 0;
+        inj4 = 0;
+      }
+      if (nCylinders < 2) inj2="disabled";
+      if (nCylinders < 3) inj3="disabled";
+      if (nCylinders < 4) inj4="disabled";
+
+      document.getElementById("PW").innerText = PW;
+      document.getElementById("inj1").innerText = inj1+" /"+gap*nCylinders;
+      document.getElementById("inj2").innerText = inj2;
+      document.getElementById("inj3").innerText = inj3;
+      document.getElementById("inj4").innerText = inj4;
+    }
+    function check(item, max) {
+      if (item.value > max) {
+        item.style.backgroundColor = "red";
+        document.getElementById("errorMsg").innerText = item.id+" too high";
+      }
+      else {
+        item.style.backgroundColor = "white";
+        document.getElementById("errorMsg").innerText = "";
+      }
+    }
+  </script>
+  <style>
+      body {
+        background-color: #555;
+      }
+      select {
+        float: right;
+      }
+      input {
+        float: right;
+        text-align: right;
+        margin: 10 10;
+      }
+      div {
+        background-color: #aaa;
+        width:max-content;
+        margin: 0 auto;
+      }
+      b.out {
+        text-align: right;
+      }
+  </style>
+</head>
+
+<body>
+  <div id="constants" class="square">
+    <p>
+      Required Fuel Constant
+      <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="check(this, 25.5)">
+    </p>
+    <p>
+      Injector Open Time
+      <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="check(this, 2.55)">
+    </p>
+    <p>
+      Number of cylinders
+      <select id="nCylinders">
+        <option value=1>1</option>
+        <option value=2>2</option>
+        <option value=3>3</option>
+        <option value=4 selected>4</option>
+        <option value=5>5</option>
+        <option value=6>6</option>
+        <option value=8>8</option>
+      </select>
+    </p>
+    <p>
+      Number of squirts
+      <select id="nSquirts">
+        <option value=1>1</option>
+        <option value=2>2</option>
+        <option value=3>3</option>
+        <option value=4>4</option>
+        <option value=5>5</option>
+        <option value=6>6</option>
+        <option value=8>8</option>
+      </select>
+    </p>
+    <p>
+      Timing
+      <select id="alternate">
+        <option value=0>Simultaneous</option>
+        <option value=1>Alternating</option>
+      </select>
+    </p>
+    <p>
+      Pairing
+      <select id="paired">
+        <option value=0>Single</option>
+        <option value=1>Paired</option>
+      </select>
+    </p>
+    <p>
+      Number of strokes
+      <select id="nStrokes">
+        <option value=4>4-stroke</option>
+        <option value=2>2-stroke</option>
+      </select>
+    </p>
+    <button type="button" onclick="compute()">Compute</button><br>
+  </div>
+
+  <div id="output" class="square">
+    <p id="errorMsg"></p>
+    <p>PW: <b class="out" id="PW"></b></p>
+    <p>INJ1: <b class="out" id="inj1"></b></p>
+    <p>INJ2: <b class="out" id="inj2"></b><br></p>
+    <p>INJ3: <b class="out" id="inj3"></b></p>
+    <p>INJ4: <b class="out" id="inj4"></b></p>
+  </div>
+
+  <!--script>
+    let width = document.getElementById("alternate").offsetWidth+"px";
+    document.getElementById("reqFuel").style.width = width;
+    document.getElementById("openTime").style.width = width;
+    document.getElementById("nCylinders").style.width = width;
+    document.getElementById("nSquirts").style.width = width;
+    document.getElementById("alternate").style.width = width;
+    document.getElementById("paired").style.width = width;
+    document.getElementById("nStrokes").style.width = width;
+  </script-->
+</body>
+
+</html>
