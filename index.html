@@ -45,14 +45,16 @@
       document.getElementById("inj4").innerText = inj4;
     }
     function check(item, max) {
-      if (item.value > max) {
-        item.style.backgroundColor = "red";
-        document.getElementById("errorMsg").innerText = item.id + " too high";
-      }
-      else {
+      let isOK = item.value <= max
+      if (isOK) {
         item.style.backgroundColor = "white";
         document.getElementById("errorMsg").innerText = "";
       }
+      else {
+        item.style.backgroundColor = "red";
+        document.getElementById("errorMsg").innerText = item.id + " too high";
+      }
+      return isOK;
     }
     function disablePaired(nCyl) {
       if (nCyl > 5) {
@@ -95,10 +97,6 @@
       width: max-content;
       margin: 0 auto;
     }
-
-    div.centered {
-      text-align: center;
-    }
   </style>
 </head>
 
@@ -108,15 +106,15 @@
       <h1>Injector Pattern Calculator</h1>
       <p>
         Required Fuel Constant
-        <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="check(this, 25.5)">
+        <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="if (check(this, 25.5)) compute();">
       </p>
       <p>
         Injector Open Time
-        <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="check(this, 2.55)">
+        <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="if (check(this, 2.55)) compute();">
       </p>
       <p>
         Number of cylinders
-        <select id="nCylinders" onchange="disablePaired(this.value)">
+        <select id="nCylinders" onchange="disablePaired(this.value); compute();">
           <option value=1>1</option>
           <option value=2>2</option>
           <option value=3>3</option>
@@ -128,7 +126,7 @@
       </p>
       <p>
         Number of squirts
-        <select id="nSquirts">
+        <select id="nSquirts" onchange="compute()">
           <option value=1 selected>1</option>
           <option value=2>2</option>
           <option value=3>3</option>
@@ -140,28 +138,25 @@
       </p>
       <p>
         Timing
-        <select id="alternate">
+        <select id="alternate" onchange="compute()">
           <option value=0>Simultaneous</option>
           <option value=1 selected>Alternating</option>
         </select>
       </p>
       <p>
         Pairing
-        <select id="paired">
+        <select id="paired" onchange="compute()">
           <option value=0>Single</option>
           <option value=1 selected>Paired</option>
         </select>
       </p>
       <p>
         Number of strokes
-        <select id="nStrokes">
+        <select id="nStrokes" onchange="compute()">
           <option value=2>2-stroke</option>
           <option value=4 selected>4-stroke</option>
         </select>
       </p>
-      <div class="centered">
-        <button type="button" onclick="compute()">Compute</button><br>
-      </div>
     </div>
 
     <div class="square" style="float: right; margin-left:5px;">
