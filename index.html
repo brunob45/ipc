@@ -49,18 +49,6 @@
       else if (nSquirts > 1) document.getElementById("algorithm").innerText = "Semi-Sequential";
       else document.getElementById("algorithm").innerText = "Sequential";
     }
-    function check(item, max) {
-      let isOK = item.value <= max
-      if (isOK) {
-        item.style.backgroundColor = "white";
-        document.getElementById("errorMsg").innerText = "";
-      }
-      else {
-        item.style.backgroundColor = "red";
-        document.getElementById("errorMsg").innerText = item.id + " maximum is " + max;
-      }
-      return isOK;
-    }
     function disablePaired(nCyl) {
       if (nCyl > 5) {
         document.getElementById("paired").value = 1;
@@ -103,11 +91,6 @@
       width: max-content;
       margin: 0 auto;
     }
-
-    p.error {
-      color: red;
-      text-align: center;
-    }
   </style>
 </head>
 
@@ -117,11 +100,11 @@
       <h1>Injector Pattern Calculator</h1>
       <p>
         Required Fuel Constant
-        <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="if (check(this, 25.5)) compute();">
+        <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="compute();">
       </p>
       <p>
         Injector Open Time
-        <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="if (check(this, 2.55)) compute();">
+        <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="compute();">
       </p>
       <p>
         Number of cylinders
@@ -192,7 +175,6 @@
         <b class="out" id="inj4"></b>
       </p>
     </div>
-    <p class="error" id="errorMsg"></p>
   </div>
 
   <script>
