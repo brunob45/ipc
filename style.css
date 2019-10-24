@@ -1,0 +1,30 @@
+body {
+	background-color: #555;
+}
+
+h1 {
+	font-size: 1.17em;
+	text-align: center;
+}
+
+select {
+	float: right;
+}
+
+input {
+	float: right;
+	text-align: right;
+}
+
+div.wrapper {
+	width: max-content;
+	margin: 0 auto;
+}
+
+div.square {
+	border-radius: 5px;
+	padding: 5px;
+	background-color: #aaa;
+	width: max-content;
+	margin: 0 auto;
+}
