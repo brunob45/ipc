@@ -22,16 +22,16 @@
       let PW = (reqFuel / nSquirts) + openTime;
 
       if (alternate) {
-        inj1 = gap * 0;
-        inj2 = gap * 1;
-        inj3 = gap * 2;
-        inj4 = gap * 3;
+        inj1 = gap * 0+'°';
+        inj2 = gap * 1+'°';
+        inj3 = gap * 2+'°';
+        inj4 = gap * 3+'°';
       }
       else {
-        inj1 = 0;
-        inj2 = 0;
-        inj3 = 0;
-        inj4 = 0;
+        inj1 = 0+'°';
+        inj2 = 0+'°';
+        inj3 = 0+'°';
+        inj4 = 0+'°';
       }
       if (nCylinders < 2) inj2 = "disabled";
       if (nCylinders < 3) inj3 = "disabled";
@@ -76,17 +76,12 @@
     input {
       float: right;
       text-align: right;
-      margin: 10 10;
     }
 
     div {
       background-color: #aaa;
       width: max-content;
       margin: 0 auto;
-    }
-
-    b.out {
-      text-align: right;
     }
   </style>
 </head>
@@ -135,8 +130,8 @@
     <p>
       Pairing
       <select id="paired">
-        <option value=0 selected>Single</option>
-        <option value=1>Paired</option>
+        <option value=0>Single</option>
+        <option value=1 selected>Paired</option>
       </select>
     </p>
     <p>
@@ -150,24 +145,25 @@
   </div>
 
   <div class="square">
-    <div style="float: left;">
-      <p id="errorMsg"></p>
-      <p>PW:</p>
-      <p>Full Cycle:</p>
-      <p>Inj1:</p>
-      <p>Inj2:<br></p>
-      <p>Inj3:</p>
-      <p>Inj4:</p>
-    </div>
-    <div style="float: right;">
-      <p id="errorMsg"></p>
-      <p><b class="out" id="PW"></b>ms</p>
-      <p><b class="out" id="cycle"></b>°</p>
-      <p><b class="out" id="inj1"></b>°</p>
-      <p><b class="out" id="inj2"></b>°<br></p>
-      <p><b class="out" id="inj3"></b>°</p>
-      <p><b class="out" id="inj4"></b>°</p>
-    </div>
+    <p id="errorMsg"></p>
+    <p>PW:
+      <b class="out" id="PW"></b>ms
+    </p>
+    <p>Full Cycle:
+      <b class="out" id="cycle"></b>°
+    </p>
+    <p>Inj1:
+      <b class="out" id="inj1"></b>
+    </p>
+    <p>Inj2:
+      <b class="out" id="inj2"></b>
+    </p>
+    <p>Inj3:
+      <b class="out" id="inj3"></b>
+    </p>
+    <p>Inj4:
+      <b class="out" id="inj4"></b>
+    </p>
   </div>
 
   <script>
