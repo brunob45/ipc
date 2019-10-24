@@ -1,13 +1,21 @@
 
-function compute() {
-    let reqFuel = parseFloat(document.getElementById("reqFuel").value);
-    let openTime = parseFloat(document.getElementById("openTime").value);
+function getFloat(name) {
+    return parseFloat(document.getElementById(name).value);
+}
 
-    let paired = document.getElementById("paired").value != 0;
-    let nCylinders = document.getElementById("nCylinders").value;
-    let nSquirts = document.getElementById("nSquirts").value;
-    let nStrokes = 4 / document.getElementById("nStrokes").value;
-    let alternate = document.getElementById("alternate").value != 0;
+function getBool(name) {
+    return document.getElementById(name).value != 0;
+}
+
+function compute() {
+    let reqFuel = getFloat("reqFuel");
+    let openTime = getFloat("openTime");
+
+    let paired = getBool("paired");
+    let nCylinders = getFloat("nCylinders");
+    let nSquirts = getFloat("nSquirts");
+    let nStrokes = 4 / getFloat("nStrokes");
+    let alternate = getBool("alternate");
 
     if (paired) {
         nCylinders = Math.ceil(nCylinders / 2);
@@ -15,7 +23,6 @@ function compute() {
 
     let inj1, inj2, inj3, inj4;
     let gap = 720 / (nStrokes * nSquirts * nCylinders);
-    let PW = (reqFuel / nSquirts) + openTime;
 
     if (alternate) {
         inj1 = gap * 0 + '°';
@@ -33,14 +40,15 @@ function compute() {
     if (nCylinders < 3) inj3 = "disabled";
     if (nCylinders < 4) inj4 = "disabled";
 
-    document.getElementById("PW").innerText = PW;
+    document.getElementById("PW").innerText = (reqFuel / nSquirts) + openTime;
     document.getElementById("cycle").innerText = gap * nCylinders;
     document.getElementById("inj1").innerText = inj1;
     document.getElementById("inj2").innerText = inj2;
     document.getElementById("inj3").innerText = inj3;
     document.getElementById("inj4").innerText = inj4;
-    }
-    function disablePaired(nCyl) {
+}
+
+function disablePaired(nCyl) {
     if (nCyl > 5) {
         document.getElementById("paired").value = 1;
         document.getElementById("paired").disabled = true;
