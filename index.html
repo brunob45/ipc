@@ -43,6 +43,11 @@
       document.getElementById("inj2").innerText = inj2;
       document.getElementById("inj3").innerText = inj3;
       document.getElementById("inj4").innerText = inj4;
+
+      if (!alternate) document.getElementById("algorithm").innerText = "Batch";
+      else if (paired) document.getElementById("algorithm").innerText = "Paired";
+      else if (nSquirts > 1) document.getElementById("algorithm").innerText = "Semi-Sequential";
+      else document.getElementById("algorithm").innerText = "Sequential";
     }
     function check(item, max) {
       let isOK = item.value <= max
@@ -66,6 +71,7 @@
       }
     }
   </script>
+
   <style>
     body {
       background-color: #555;
@@ -96,6 +102,11 @@
       background-color: #aaa;
       width: max-content;
       margin: 0 auto;
+    }
+
+    p.error {
+      color: red;
+      text-align: center;
     }
   </style>
 </head>
@@ -161,14 +172,13 @@
 
     <div class="square" style="float: right; margin-left:5px;">
       <h1>Results</h1>
-      <p id="errorMsg"></p>
+      <p id="algorithm"></p>
       <p>PW:
         <b class="out" id="PW"></b>ms
       </p>
       <p>Full Cycle:
         <b class="out" id="cycle"></b>°
       </p>
-      <br>
       <p>Inj1:
         <b class="out" id="inj1"></b>
       </p>
@@ -182,6 +192,7 @@
         <b class="out" id="inj4"></b>
       </p>
     </div>
+    <p class="error" id="errorMsg"></p>
   </div>
 
   <script>
