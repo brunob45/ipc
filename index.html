@@ -83,6 +83,11 @@
       text-align: right;
     }
 
+    div.wrapper {
+      width: max-content;
+      margin: 0 auto;
+    }
+
     div.square {
       border-radius: 5px;
       padding: 5px;
@@ -98,89 +103,90 @@
 </head>
 
 <body>
-  <div id="constants" class="square">
-    <h1>Injector Pattern Calculator</h1>
-    <p>
-      Required Fuel Constant
-      <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="check(this, 25.5)">
-    </p>
-    <p>
-      Injector Open Time
-      <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="check(this, 2.55)">
-    </p>
-    <p>
-      Number of cylinders
-      <select id="nCylinders" onchange="disablePaired(this.value)">
-        <option value=1>1</option>
-        <option value=2>2</option>
-        <option value=3>3</option>
-        <option value=4 selected>4</option>
-        <option value=5>5</option>
-        <option value=6>6</option>
-        <option value=8>8</option>
-      </select>
-    </p>
-    <p>
-      Number of squirts
-      <select id="nSquirts">
-        <option value=1 selected>1</option>
-        <option value=2>2</option>
-        <option value=3>3</option>
-        <option value=4>4</option>
-        <option value=5>5</option>
-        <option value=6>6</option>
-        <option value=8>8</option>
-      </select>
-    </p>
-    <p>
-      Timing
-      <select id="alternate">
-        <option value=0>Simultaneous</option>
-        <option value=1 selected>Alternating</option>
-      </select>
-    </p>
-    <p>
-      Pairing
-      <select id="paired">
-        <option value=0>Single</option>
-        <option value=1 selected>Paired</option>
-      </select>
-    </p>
-    <p>
-      Number of strokes
-      <select id="nStrokes">
-        <option value=2>2-stroke</option>
-        <option value=4 selected>4-stroke</option>
-      </select>
-    </p>
-    <div class="centered">
-      <button type="button" onclick="compute()">Compute</button><br>
+  <div class="wrapper">
+    <div class="square" style="float: left;">
+      <h1>Injector Pattern Calculator</h1>
+      <p>
+        Required Fuel Constant
+        <input id="reqFuel" step="0.1" type="number" min="0" max="25.5" value="12.0" onchange="check(this, 25.5)">
+      </p>
+      <p>
+        Injector Open Time
+        <input id="openTime" step="0.01" type="number" min="0" max="2.55" value="1.00" onchange="check(this, 2.55)">
+      </p>
+      <p>
+        Number of cylinders
+        <select id="nCylinders" onchange="disablePaired(this.value)">
+          <option value=1>1</option>
+          <option value=2>2</option>
+          <option value=3>3</option>
+          <option value=4 selected>4</option>
+          <option value=5>5</option>
+          <option value=6>6</option>
+          <option value=8>8</option>
+        </select>
+      </p>
+      <p>
+        Number of squirts
+        <select id="nSquirts">
+          <option value=1 selected>1</option>
+          <option value=2>2</option>
+          <option value=3>3</option>
+          <option value=4>4</option>
+          <option value=5>5</option>
+          <option value=6>6</option>
+          <option value=8>8</option>
+        </select>
+      </p>
+      <p>
+        Timing
+        <select id="alternate">
+          <option value=0>Simultaneous</option>
+          <option value=1 selected>Alternating</option>
+        </select>
+      </p>
+      <p>
+        Pairing
+        <select id="paired">
+          <option value=0>Single</option>
+          <option value=1 selected>Paired</option>
+        </select>
+      </p>
+      <p>
+        Number of strokes
+        <select id="nStrokes">
+          <option value=2>2-stroke</option>
+          <option value=4 selected>4-stroke</option>
+        </select>
+      </p>
+      <div class="centered">
+        <button type="button" onclick="compute()">Compute</button><br>
+      </div>
     </div>
-  </div>
 
-  <div class="spacer" style="height: 5px;"></div>
-
-  <div class="square">
-    <h1>Results</h1>
-    <p id="errorMsg"></p>
-    <p>PW:
-      <b class="out" id="PW"></b>ms
-    </p>
-    <p>Full Cycle:
-      <b class="out" id="cycle"></b>°
-    </p>
-    <p>Inj1:
-      <b class="out" id="inj1"></b>
-    </p>
-    <p>Inj2:
-      <b class="out" id="inj2"></b>
-    </p>
-    <p>Inj3:
-      <b class="out" id="inj3"></b>
-    </p>
-    <p>Inj4:
-      <b class="out" id="inj4"></b>
-    </p>
+    <div class="square" style="float: right; margin-left:5px;">
+      <h1>Results</h1>
+      <p id="errorMsg"></p>
+      <p>PW:
+        <b class="out" id="PW"></b>ms
+      </p>
+      <p>Full Cycle:
+        <b class="out" id="cycle"></b>°
+      </p>
+      <br>
+      <p>Inj1:
+        <b class="out" id="inj1"></b>
+      </p>
+      <p>Inj2:
+        <b class="out" id="inj2"></b>
+      </p>
+      <p>Inj3:
+        <b class="out" id="inj3"></b>
+      </p>
+      <p>Inj4:
+        <b class="out" id="inj4"></b>
+      </p>
+    </div>
   </div>
 
   <script>
