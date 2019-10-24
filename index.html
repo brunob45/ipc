@@ -53,6 +53,15 @@
         document.getElementById("errorMsg").innerText = "";
       }
     }
+    function disablePaired(nCyl) {
+      if (nCyl > 5) {
+        document.getElementById("paired").value = 1;
+        document.getElementById("paired").disabled = true;
+      }
+      else {
+        document.getElementById("paired").disabled = false;
+      }
+    }
   </script>
   <style>
       body {
@@ -89,7 +98,7 @@
     </p>
     <p>
       Number of cylinders
-      <select id="nCylinders">
+      <select id="nCylinders" onchange="disablePaired(this.value)">
         <option value=1>1</option>
         <option value=2>2</option>
         <option value=3>3</option>
