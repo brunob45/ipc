@@ -14,7 +14,7 @@ function compute() {
     let paired = getBool("paired");
     let nCylinders = getFloat("nCylinders");
     let nSquirts = getFloat("nSquirts");
-    let nStrokes = 4 / getFloat("nStrokes");
+    let nStrokes = 2 / (2-getFloat("nStrokes"));
     let alternate = getBool("alternate");
 
     if (paired) {
