@@ -164,8 +164,20 @@
             <button  id="apply" type="button">Apply</button >
         </div>
         <script>
-            function computeValues(algorithm) {
-                myPID = new PID(document.getElementById('kp').value,document.getElementById('ki').value,document.getElementById('kd').value);
+            function computeValues() {
+                algorithm = document.getElementById('algorithm').value;
+                var kp = document.getElementById('kp').value;
+                var ki = document.getElementById('ki').value
+                var kd = document.getElementById('kd').value
+                if (algorithm == 1) {
+                    ki = Math.floor(ki / 10);
+                    kd = kd * 10;
+                }
+                else if (algorithm == 2) {
+                    ki = Math.floor(ki * 1024 / 4);
+                    kd = kd * 4;
+                }
+                myPID = new PID(kp,ki,kd);
                 var inputs = [];
                 var outputs = [];
                 var targets = [];
@@ -182,23 +194,22 @@
                     if (algorithm == 1) output = myPID.computev1(input, setpoint);
                     else if (algorithm == 2) output = myPID.computev2(input, setpoint, document.getElementById('pOnE').checked);
                     else if (algorithm == 3) output = myPID.computev3(input, setpoint, document.getElementById('sensitivity').value);
-                    else output = myPID.compute(input, setpoint, 2047);
-                    if (i > 10) {
-                        inputs.push({x:i, y:input});
-                        outputs.push({x:i, y:output});
-                        targets.push({x:i, y:setpoint});
-                    }
-                    if (i > 10) input = Math.floor((input * 9 + output)/10);
+                    else output = myPID.compute(input, setpoint);
+
+                    inputs.push({x:i, y:input});
+                    outputs.push({x:i, y:output});
+                    targets.push({x:i, y:setpoint});
+
+                    if (i > 20) input = Math.floor(input * 0.9 + output * 0.1);
                     if (i == 128) setpoint = setpoint * 3/4;
                 }
                 return [inputs, outputs, targets]
             }
 
             function updateDataSets() {
-                algo = document.getElementById('algorithm').value;
-                tables = computeValues(algo);
+                tables = computeValues();
                 scatterChart.data.datasets = [{
-                    label: 'Inputs',
+                    label: 'Input',
                     backgroundColor: 'rgb(255, 99, 132)',
                     borderColor: 'rgb(255, 99, 132)',
                     fill: false,
@@ -206,7 +217,7 @@
                     showLine: true,
                     data: tables[0]
                 },{
-                    label: 'Outputs',
+                    label: 'Output',
                     backgroundColor: 'rgb(99, 132, 255)',
                     borderColor: 'rgb(99, 132, 255)',
                     fill: false,
