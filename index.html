@@ -17,10 +17,11 @@
                 }
                 compute(input, setpoint) {
                     var error = setpoint - input;
+                    if (document.getElementById('reversed').checked) error = -error;
                     var derivative = error - this.previous_error;
 
                     this.integral += error;
-                    var integral_limit = this.max - this.min;
+                    var integral_limit = (this.max - this.min)*100;
                     if (this.integral > integral_limit) this.integral = integral_limit;
                     if (this.integral < -integral_limit) this.integral = -integral_limit;
 
@@ -156,11 +157,11 @@
                     multipler = 100;
                 }
 
-                // if (document.getElementById('reversed').checked) {
-                //     kp = -kp;
-                //     ki = -ki;
-                //     kd = -kd;
-                // }
+                if (document.getElementById('reversed').checked && algorithm != 0) {
+                    kp = -kp;
+                    ki = -ki;
+                    kd = -kd;
+                }
 
                 myPID = new PID(kp,ki,kd);
 
@@ -182,7 +183,10 @@
                     targets.push({x:i*sampleTime/1000, y:setpoint/multipler});
 
                     if (i > 20) {
-                        input = Math.floor(input * 0.9 + output * 0.1);
+                        if (document.getElementById('reversed').checked) {
+                            output = (myPID.max + myPID.min)*multipler - output;
+                        }
+                        input = Math.floor((input * 9 + output)/10);
                     }
                     if (i == 128) setpoint = 45 * multipler;
                 }
@@ -228,9 +232,9 @@
         <div>
             <b>Algorithm</b>
             <select id='algorithm'>
-                <option value="1">PID</option>
-                <option value="2">integerPID</option>
-                <option value="3" selected>integerPID_ideal</option>
+                <option value="1">PID (EGO correction)</option>
+                <option value="2">integerPID (VVT & Idle)</option>
+                <option value="3" selected>integerPID_ideal (Boost)</option>
                 <option value="0">simple</option>
             </select>
         </div>
@@ -244,9 +248,9 @@
         </div>
         <div>
             <b>Sensitivity</b>
-            <input id="sensitivity" type="number" value=2048 min=0 max=5000><br>
-            <input id="pOnE" type="checkbox" name="pOnE" value="true"> pOnE <br>
-            <!-- <input id="reversed" type="checkbox" name="reversed" value="true"> reversed <br> -->
+            <input id="sensitivity" type="number" value=2048 min=0 max=5000> (integerPID_ideal)<br>
+            <input id="pOnE" type="checkbox" name="pOnE" value="true"><b>pOnE</b> (integerPID)<br>
+            <input id="reversed" type="checkbox" name="reversed" value="true"><b>Reversed</b><br>
         </div>
         <div>
             <button  id="apply" type="button">Apply</button >
