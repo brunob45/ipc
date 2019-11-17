@@ -17,7 +17,6 @@
                 }
                 compute(input, setpoint) {
                     var error = setpoint - input;
-                    if (document.getElementById('reversed').checked) error = -error;
                     var derivative = error - this.previous_error;
 
                     this.integral += error;
@@ -139,25 +138,28 @@
                 var kp = document.getElementById('kp').value;
                 var ki = document.getElementById('ki').value;
                 var kd = document.getElementById('kd').value;
-                var sampleTime = 1;
+                var sampleTime = 100;
                 var multipler = 1;
 
                 if (algorithm == 1) {
-                    ki = Math.floor(ki / 10);
-                    kd = kd * 10;
-                    sampleTime = 100;
+                    frequency = Math.floor(1000/sampleTime);
+                    ki = Math.floor(ki / frequency);
+                    kd = kd * frequency;
                 }
                 else if (algorithm == 2) {
-                    ki = Math.floor(ki * 1024 / 4);
-                    kd = kd * 4;
                     sampleTime = 250;
+                    frequency = Math.floor(1000/sampleTime);
+                    ki = Math.floor(ki * 1024 / frequency);
+                    kd = kd * frequency;
                 }
                 else if (algorithm == 3) {
                     sampleTime = 20;
                     multipler = 100;
                 }
 
-                if (document.getElementById('reversed').checked && algorithm != 0) {
+                document.getElementById('sampleTime').innerText = sampleTime
+
+                if (document.getElementById('reversed').checked) {
                     kp = -kp;
                     ki = -ki;
                     kd = -kd;
@@ -237,6 +239,7 @@
                 <option value="3" selected>integerPID_ideal (Boost)</option>
                 <option value="0">simple</option>
             </select>
+            <b>Sample time: </b><b id="sampleTime"></b><b>ms</b>
         </div>
         <div>
             <b>P</b>
