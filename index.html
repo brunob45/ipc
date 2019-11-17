@@ -15,24 +15,28 @@
                     this.min = 20;
                     this.max = 80;
                 }
-                compute(input, setpoint) {
+                simpleCompute(input, setpoint) {
                     var error = setpoint - input;
                     var derivative = error - this.previous_error;
 
                     this.integral += error;
-                    var integral_limit = (this.max - this.min)*100;
-                    if (this.integral > integral_limit) this.integral = integral_limit;
-                    if (this.integral < -integral_limit) this.integral = -integral_limit;
 
                     var output = this.bias + Math.floor((this.kp * error + this.ki * this.integral + this.kd * derivative)/100);
-                    if (output > this.max) output = this.max;
-                    if (output < this.min) output = this.min;
+
+                    if (output > this.max) {
+                        output = this.max;
+                        this.integral -= error;
+                    }
+                    if (output < this.min) {
+                        output = this.min;
+                        this.integral -= error;
+                    }
 
                     this.previous_error = error;
 
                     return output;
                 }
-                computev1(input, setpoint) {
+                basicCompute(input, setpoint) {
                     var error = setpoint - input;
                     this.integral += Math.floor((this.ki * error)/100);
                     if(this.integral > this.max) this.integral = this.max;
@@ -50,7 +54,7 @@
                     //lastTime = now;
                     return output;
                 }
-                computev2(input, setpoint, pOnE) {
+                integerCompute(input, setpoint, pOnE) {
                     var error = setpoint - input;
                     var dInput = (input - this.last_input);
 
@@ -81,7 +85,7 @@
 
                     return output;
                 }
-                computev3(input, setpoint, sens) {
+                idealCompute(input, setpoint, sens) {
                     var sensitivity = 10001 - (sens * 2);
                     var unitless_setpoint = Math.floor(((setpoint - 0) * 10000) / (sensitivity - 0));
                     var unitless_input = Math.floor(((input - 0) * 10000) / (sensitivity - 0));
@@ -95,14 +99,14 @@
 
                     if(this.ki != 0)
                     {
-                        output = ((this.max - bias) * limitMultiplier * 100) / this.ki;
+                        output = Math.floor(((this.max - bias) * limitMultiplier * 100) / this.ki);
                         if (output < 0) { output = 0; }
                     }
                     if (this.integral > output) { this.integral = output; }
 
                     if(this.ki != 0)
                     {
-                        output = ((bias - this.min) * limitMultiplier * 100) / this.ki;
+                        output = Math.floor(((bias - this.min) * limitMultiplier * 100) / this.ki);
                         if (output < 0) { output = 0; }
                     }
                     else { output = 0; }
@@ -110,10 +114,10 @@
 
                     /*Compute PID Output*/
                     output = (this.kp * error) + (this.ki * this.integral) + (this.kd * (error - this.previous_error));
-                    output = (bias * limitMultiplier) + (output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+                    output = (bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
 
-                    //if(output > (outMax * limitMultiplier)) { output  = (outMax * limitMultiplier);  }
-                    //if(output < (outMin * limitMultiplier)) { output  = (outMin * limitMultiplier);  }
+                    // if(output > (this.max * limitMultiplier)) { output  = (this.max * limitMultiplier);  }
+                    // if(output < (this.min * limitMultiplier)) { output  = (this.min * limitMultiplier);  }
 
                     if(output > (this.max * limitMultiplier))
                     { 
@@ -125,6 +129,77 @@
                         output  = (this.min * limitMultiplier);
                         this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
                     }
+
+                    /*Remember some variables for next time*/
+                    this.previous_error = error;
+
+                    return output;
+                }
+                myCustomCompute(input, setpoint, sens) {
+                    var sensitivity = 10001 - (sens * 2);
+                    var unitless_setpoint = Math.floor(((setpoint - 0) * 10000) / (sensitivity - 0));
+                    var unitless_input = Math.floor(((input - 0) * 10000) / (sensitivity - 0));
+                    var error = unitless_setpoint - unitless_input;
+
+                    var bias = 50; //Base target DC%
+                    var output = 0;
+                    var limitMultiplier = 100;
+
+                    this.integral += error;
+
+                    /*Compute PID Output*/
+                    output = (this.kp * error) + (this.ki * this.integral) + (this.kd * (error - this.previous_error));
+                    output = (bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+
+                    if(output > (this.max * limitMultiplier))
+                    { 
+                        output  = (this.max * limitMultiplier);
+                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    }
+                    if(output < (this.min * limitMultiplier)) 
+                    { 
+                        output  = (this.min * limitMultiplier);
+                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    }
+
+                    /*Remember some variables for next time*/
+                    this.previous_error = error;
+
+                    return output;
+                }
+                windupCompute(input, setpoint, sens) {
+                    var sensitivity = 10001 - (sens * 2);
+                    var unitless_setpoint = Math.floor(((setpoint - 0) * 10000) / (sensitivity - 0));
+                    var unitless_input = Math.floor(((input - 0) * 10000) / (sensitivity - 0));
+                    var error = unitless_setpoint - unitless_input;
+
+                    this.integral += error;
+
+                    var bias = 50; //Base target DC%
+                    var output = 0;
+                    var limitMultiplier = 100;
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((this.max - bias) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    if (this.integral > output) { this.integral = output; }
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((bias - this.min) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    else { output = 0; }
+                    if (this.integral < -output) { this.integral = -output; }
+
+                    /*Compute PID Output*/
+                    output = (this.kp * error) + (this.ki * this.integral) + (this.kd * (error - this.previous_error));
+                    output = (bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+
+                    if(output > (this.max * limitMultiplier)) { output  = (this.max * limitMultiplier);  }
+                    if(output < (this.min * limitMultiplier)) { output  = (this.min * limitMultiplier);  }
 
                     /*Remember some variables for next time*/
                     this.previous_error = error;
@@ -152,7 +227,7 @@
                     ki = Math.floor(ki * 1024 / frequency);
                     kd = kd * frequency;
                 }
-                else if (algorithm == 3) {
+                else if (algorithm >= 3) {
                     sampleTime = 20;
                     multipler = 100;
                 }
@@ -175,10 +250,12 @@
                 var output = 0;
 
                 for (i = 0; i < 250; i++) {
-                    if (algorithm == 1) output = myPID.computev1(input, setpoint);
-                    else if (algorithm == 2) output = myPID.computev2(input, setpoint, document.getElementById('pOnE').checked);
-                    else if (algorithm == 3) output = myPID.computev3(input, setpoint, document.getElementById('sensitivity').value);
-                    else output = myPID.compute(input, setpoint);
+                    if (algorithm == 1) output = myPID.basicCompute(input, setpoint);
+                    else if (algorithm == 2) output = myPID.integerCompute(input, setpoint, document.getElementById('pOnE').checked);
+                    else if (algorithm == 3) output = myPID.idealCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else if (algorithm == 4) output = myPID.myCustomCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else if (algorithm == 5) output = myPID.windupCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else output = myPID.simpleCompute(input, setpoint);
 
                     inputs.push({x:i*sampleTime/1000, y:input/multipler});
                     outputs.push({x:i*sampleTime/1000, y:output/multipler});
@@ -234,10 +311,13 @@
         <div>
             <b>Algorithm</b>
             <select id='algorithm'>
-                <option value="1">PID (EGO correction)</option>
-                <option value="2">integerPID (VVT & Idle)</option>
-                <option value="3" selected>integerPID_ideal (Boost)</option>
-                <option value="0">simple</option>
+                <option value=1>PID (EGO correction)</option>
+                <option value=2>integerPID (VVT & Idle)</option>
+                <option value=3 selected>integerPID_ideal (Boost)</option>
+                <option value=0>-----</option>
+                <option value=5>integerPID_ideal (windup problem)</option>
+                <option value=4>integerPID_ideal (fix reversed)</option>
+                <option value=0>simple</option>
             </select>
             <b>Sample time: </b><b id="sampleTime"></b><b>ms</b>
         </div>
