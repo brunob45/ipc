@@ -21,7 +21,7 @@
 
                     this.integral += error;
 
-                    var output = this.bias + Math.floor((this.kp * error + this.ki * this.integral + this.kd * derivative)/100);
+                    var output = this.bias + Math.floor((this.kp * error + this.ki * this.integral + this.kd * derivative)/10);
 
                     if (output > this.max) {
                         output = this.max;
@@ -136,6 +136,9 @@
                 }
                 myCustomCompute(input, setpoint, sens) {
                     const limitMultiplier = 100;
+                    const max = this.max * limitMultiplier;
+                    const min = this.min * limitMultiplier;
+                    const bias = this.bias * limitMultiplier;
 
                     const sensitivity = 10001 - (sens * 2);
                     const error = Math.floor((setpoint - input) * 10000 / sensitivity);
@@ -145,16 +148,16 @@
 
                     /*Compute PID Output*/
                     var output = (this.kp * error) + (this.ki * this.integral) + (this.kd * derivative);
-                    output = (this.bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+                    output = bias + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
 
-                    if(output > (this.max * limitMultiplier))
+                    if(output > max)
                     { 
-                        output = (this.max * limitMultiplier);
+                        output = max;
                         this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
                     }
-                    if(output < (this.min * limitMultiplier))
+                    if(output < min)
                     { 
-                        output = (this.min * limitMultiplier);
+                        output = min;
                         this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
                     }
 
