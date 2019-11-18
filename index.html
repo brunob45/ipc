@@ -18,18 +18,18 @@
                 simpleCompute(input, setpoint) {
                     const error = setpoint - input;
                     const derivative = error - this.previous_error;
+                    const integral = this.integral + error;
 
-                    this.integral += error;
-
-                    var output = this.bias + Math.floor((this.kp * error + this.ki * this.integral + this.kd * derivative)/10);
+                    var output = this.bias + Math.floor((this.kp * error + this.ki * integral + this.kd * derivative)/10);
 
                     if (output > this.max) {
                         output = this.max;
-                        this.integral -= error;
                     }
-                    if (output < this.min) {
+                    else if (output < this.min) {
                         output = this.min;
-                        this.integral -= error;
+                    }
+                    else { // Update integral term only if the output is within the limit values. This is done to prevent integral windup.
+                        this.integral = integral;
                     }
 
                     this.previous_error = error;
@@ -136,29 +136,25 @@
                 }
                 myCustomCompute(input, setpoint, sens) {
                     const limitMultiplier = 100;
-                    const max = this.max * limitMultiplier;
-                    const min = this.min * limitMultiplier;
-                    const bias = this.bias * limitMultiplier;
 
                     const sensitivity = 10001 - (sens * 2);
                     const error = Math.floor((setpoint - input) * 10000 / sensitivity);
 
-                    this.integral += error;
+                    const integral = this.integral + error;
                     const derivative = error - this.previous_error;
 
                     /*Compute PID Output*/
-                    var output = (this.kp * error) + (this.ki * this.integral) + (this.kd * derivative);
-                    output = bias + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+                    var output = (this.kp * error) + (this.ki * integral) + (this.kd * derivative);
+                    output = (this.bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
 
-                    if(output > max)
-                    { 
-                        output = max;
-                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    if(output > (this.max * limitMultiplier)) {
+                        output = (this.max * limitMultiplier);
                     }
-                    if(output < min)
-                    { 
-                        output = min;
-                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    else if(output < (this.min * limitMultiplier)) {
+                        output = (this.min * limitMultiplier);
+                    }
+                    else { // Update integral term only if the output is within the limit values. This is done to prevent integral windup.
+                        this.integral = integral;
                     }
 
                     /*Remember some variables for next time*/
