@@ -8,19 +8,19 @@
                     this.kp = kp;
                     this.ki = ki;
                     this.kd = kd;
-                    this.previous_error = 0;
+                    this.previous_error = null;
                     this.last_input = 0;
                     this.integral = 0;
                     this.bias = 50;
                     this.min = 20;
                     this.max = 80;
                 }
-                simpleCompute(input, setpoint) {
+                simpleCompute(input, setpoint, dt) {
                     const error = setpoint - input;
-                    const derivative = error - this.previous_error;
-                    const integral = this.integral + error;
+                    const integral = this.integral + (error * dt);
+                    const derivative = this.previous_error == null ? 0 : (error - this.previous_error) / dt;
 
-                    var output = this.bias + Math.floor((this.kp * error + this.ki * integral + this.kd * derivative)/10);
+                    var output = this.bias + ((this.kp * error + this.ki * integral + this.kd * derivative)/10);
 
                     if (output > this.max) {
                         output = this.max;
@@ -34,7 +34,7 @@
 
                     this.previous_error = error;
 
-                    return output;
+                    return [output, this.kp * error, this.ki * integral, this.kd * derivative];
                 }
                 basicCompute(input, setpoint) {
                     const error = setpoint - input;
@@ -209,15 +209,14 @@
                 var kd = document.getElementById('kd').value;
                 var sampleTime = 100;
                 var multipler = 1;
+                frequency = Math.floor(1000/sampleTime);
 
                 if (algorithm == 1) {
-                    frequency = Math.floor(1000/sampleTime);
                     ki = Math.floor(ki / frequency);
                     kd = kd * frequency;
                 }
                 else if (algorithm == 2) {
                     sampleTime = 250;
-                    frequency = Math.floor(1000/sampleTime);
                     ki = Math.floor(ki * 1024 / frequency);
                     kd = kd * frequency;
                 }
@@ -237,11 +236,14 @@
                 myPID = new PID(kp,ki,kd);
 
                 var inputs = [];
-                var outputs = [];
                 var targets = [];
+                var outputs = [];
+                var p_values = [];
+                var i_values = [];
+                var d_values = [];
                 var input = 50 * multipler;
                 var setpoint = 60 * multipler;
-                var output = 0;
+                var output = [0];
 
                 for (i = 0; i < 250; i++) {
                     if (algorithm == 1) output = myPID.basicCompute(input, setpoint);
@@ -249,27 +251,37 @@
                     else if (algorithm == 3) output = myPID.idealCompute(input, setpoint, document.getElementById('sensitivity').value);
                     else if (algorithm == 4) output = myPID.myCustomCompute(input, setpoint, document.getElementById('sensitivity').value);
                     else if (algorithm == 5) output = myPID.windupCompute(input, setpoint, document.getElementById('sensitivity').value);
-                    else output = myPID.simpleCompute(input, setpoint);
+                    else output = myPID.simpleCompute(input, setpoint, 0.1);
 
                     inputs.push({x:i*sampleTime/1000, y:input/multipler});
-                    outputs.push({x:i*sampleTime/1000, y:output/multipler});
                     targets.push({x:i*sampleTime/1000, y:setpoint/multipler});
 
+                    outputs.push({x:i*sampleTime/1000, y:output[0]/multipler});
+                    p_values.push({x:i*sampleTime/1000, y:output[1]});
+                    i_values.push({x:i*sampleTime/1000, y:output[2]});
+                    d_values.push({x:i*sampleTime/1000, y:output[3]});
+
                     if (i > 20) {
-                        if (document.getElementById('reversed').checked) {
-                            output = (myPID.max + myPID.min)*multipler - output;
-                        }
-                        input = Math.floor((input * 9 + output)/10);
+                        input = (input * 9 + output[0])/10;
                     }
-                    if (i == 128) setpoint = 45 * multipler;
+                    if (i == 75) {
+                        setpoint = 40 * multipler;
+                    }
+                    else if (i > 200) {
+                        // skip
+                    }
+                    else if (i > 150) {
+                        // setpoint = (Math.sin((i-150)/6)*10*multipler)+(40*multipler)
+                        setpoint += 0.3
+                    }
                 }
 
-                return [inputs, outputs, targets];
+                return [inputs, outputs, targets, p_values, i_values, d_values];
             }
 
             function updateDataSets() {
                 tables = computeValues();
-                scatterChart.data.datasets = [{
+                scatterChartA.data.datasets = [{
                         label: 'Input',
                         backgroundColor: 'rgb(255, 99, 132)',
                         borderColor: 'rgb(255, 99, 132)',
@@ -294,34 +306,62 @@
                         showLine: true,
                         data: tables[2]
                     }];
-                scatterChart.update();
+                scatterChartB.data.datasets = [{
+                        label: 'P',
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[3]
+                    },{
+                        label: 'I',
+                        backgroundColor: 'rgb(99, 132, 255)',
+                        borderColor: 'rgb(99, 132, 255)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[4]
+                    },{
+                        label: 'D',
+                        backgroundColor: 'rgb(132, 255, 99)',
+                        borderColor: 'rgb(132, 255, 99)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[5]
+                    }];
+
+                scatterChartA.update();
+                scatterChartB.update();
             }
         </script>
     </head>
     <body>
         <div style="width: 75%; height: 75%;">
-            <canvas id="myChart"></canvas>
+            <canvas id="myChartA"></canvas>
+            <canvas id="myChartB"></canvas>
         </div>
         <div>
             <b>Algorithm</b>
             <select id='algorithm'>
                 <option value=1>PID (EGO correction)</option>
                 <option value=2>integerPID (VVT & Idle)</option>
-                <option value=3 selected>integerPID_ideal (Boost)</option>
+                <option value=3>integerPID_ideal (Boost)</option>
                 <option value=0>-----</option>
                 <option value=5>integerPID_ideal (windup problem)</option>
                 <option value=4>integerPID_ideal (fix reversed)</option>
-                <option value=0>simple</option>
+                <option value=0 selected>simple</option>
             </select>
             <b>Sample time: </b><b id="sampleTime"></b><b>ms</b>
         </div>
         <div>
             <b>P</b>
-            <input id="kp" type="number" value=20 min=0 max=200>
+            <input id="kp" type="number" value=15 min=0 max=200>
             <b>I</b>
-            <input id="ki" type="number" value=2 min=0 max=200>
+            <input id="ki" type="number" value=4 min=0 max=200>
             <b>D</b>
-            <input id="kd" type="number" value=10 min=0 max=200>
+            <input id="kd" type="number" value=0.1 min=0 max=200>
         </div>
         <div>
             <b>Sensitivity</b>
@@ -342,7 +382,7 @@
             simple: My take at making a simple PID algorithm.<br>
         </div>
         <script>
-            var scatterChart = new Chart(document.getElementById('myChart').getContext('2d'), {
+            var scatterChartA = new Chart(document.getElementById('myChartA').getContext('2d'), {
                 type: 'scatter',
                 data: { datasets: [] },
                 options: {
@@ -359,6 +399,33 @@
                             ticks: {
                                 suggestedMin: 10,
                                 suggestedMax: 90
+                            }
+                        }]
+                    },
+                    elements: {
+                        point: {
+                            radius:0
+                        }
+                    }
+                }
+            });
+            var scatterChartB = new Chart(document.getElementById('myChartB').getContext('2d'), {
+                type: 'scatter',
+                data: { datasets: [] },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: 'linear',
+                            position: 'bottom',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'seconds'
+                            }
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                suggestedMin: -200,
+                                suggestedMax: 200
                             }
                         }]
                     },
