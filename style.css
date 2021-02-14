@@ -7,6 +7,10 @@ h1 {
 	text-align: center;
 }
 
+p {
+	line-height: 0.6;
+}
+
 select {
 	float: right;
 }

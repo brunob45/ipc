@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+        <script>
+            class PID {
+                constructor(kp, ki, kd) {
+                    this.kp = kp;
+                    this.ki = ki;
+                    this.kd = kd;
+                    this.previous_error = 0;
+                    this.last_input = 0;
+                    this.integral = 0;
+                    this.bias = 50;
+                    this.min = 20;
+                    this.max = 80;
+                }
+                simpleCompute(input, setpoint) {
+                    const error = setpoint - input;
+                    const derivative = error - this.previous_error;
+                    const integral = this.integral + error;
+
+                    var output = this.bias + Math.floor((this.kp * error + this.ki * integral + this.kd * derivative)/10);
+
+                    if (output > this.max) {
+                        output = this.max;
+                    }
+                    else if (output < this.min) {
+                        output = this.min;
+                    }
+                    else { // Update integral term only if the output is within the limit values. This is done to prevent integral windup.
+                        this.integral = integral;
+                    }
+
+                    this.previous_error = error;
+
+                    return output;
+                }
+                basicCompute(input, setpoint) {
+                    const error = setpoint - input;
+                    this.integral += Math.floor((this.ki * error)/100);
+                    if(this.integral > this.max) this.integral = this.max;
+                    else if(this.integral < this.min) this.integral = this.min;
+                    const dInput = (input - this.last_input);
+
+                    /*Compute PID Output*/
+                    var output = Math.floor((this.kp * error)/100) + this.integral- Math.floor((this.kd * dInput)/100);
+
+                    if(output > this.max) { output = this.max; }
+                    else if(output < this.min) { output = this.min; }
+
+                    /*Remember some variables for next time*/
+                    this.last_input = input;
+                    //lastTime = now;
+                    return output;
+                }
+                integerCompute(input, setpoint, pOnE) {
+                    const error = setpoint - input;
+                    const dInput = (input - this.last_input);
+
+                    this.integral += Math.floor((this.ki * error)/1024); //Note that ki is multiplied by 1024 so it must be divided by 1024 here
+                    if(this.integral > this.max) { this.integral = this.max; }
+                    else if(this.integral < this.min) { this.integral = this.min; }
+                    
+                    /*Compute PID Output*/                    
+                    if(pOnE)
+                    {
+                        var output = (this.kp * error) + this.integral - Math.floor((this.kd * dInput)/128);
+                    }
+                    else
+                    {
+                        this.integral -= this.kp * dInput;
+                        if(this.integral > this.max) { this.integral = this.max; }
+                        else if(this.integral < this.min) { this.integral = this.min; }
+
+                        var output = this.integral - ((this.kd * dInput)/128);
+                    }
+                    
+
+                    if(output > this.max) output = this.max;
+                    else if(output < this.min) output = this.min;
+
+                    /*Remember some variables for next time*/
+                    this.last_input = input;
+
+                    return output;
+                }
+                idealCompute(input, setpoint, sens) {
+                    const sensitivity = 10001 - (sens * 2);
+                    const unitless_setpoint = Math.floor(((setpoint - 0) * 10000) / (sensitivity - 0));
+                    const unitless_input = Math.floor(((input - 0) * 10000) / (sensitivity - 0));
+                    const error = unitless_setpoint - unitless_input;
+
+                    this.integral += error;
+
+                    var output = 0;
+                    const limitMultiplier = 100;
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((this.max - this.bias) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    if (this.integral > output) { this.integral = output; }
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((this.bias - this.min) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    else { output = 0; }
+                    if (this.integral < -output) { this.integral = -output; }
+
+                    /*Compute PID Output*/
+                    output = (this.kp * error) + (this.ki * this.integral) + (this.kd * (error - this.previous_error));
+                    output = (this.bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+
+                    // if(output > (this.max * limitMultiplier)) { output  = (this.max * limitMultiplier);  }
+                    // if(output < (this.min * limitMultiplier)) { output  = (this.min * limitMultiplier);  }
+
+                    if(output > (this.max * limitMultiplier))
+                    { 
+                        output  = (this.max * limitMultiplier);
+                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    }
+                    if(output < (this.min * limitMultiplier)) 
+                    { 
+                        output  = (this.min * limitMultiplier);
+                        this.integral -= error; //Prevent the ITerm from growing indefinitely whilst the output is being limited (error was added to ITerm above, so this is simply setting it back to it's original value)
+                    }
+
+                    /*Remember some variables for next time*/
+                    this.previous_error = error;
+
+                    return output;
+                }
+                myCustomCompute(input, setpoint, sens) {
+                    const limitMultiplier = 100;
+
+                    const sensitivity = 10001 - (sens * 2);
+                    const error = Math.floor((setpoint - input) * 10000 / sensitivity);
+
+                    const integral = this.integral + error;
+                    const derivative = error - this.previous_error;
+
+                    /*Compute PID Output*/
+                    var output = (this.kp * error) + (this.ki * integral) + (this.kd * derivative);
+                    output = (this.bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+
+                    if(output > (this.max * limitMultiplier)) {
+                        output = (this.max * limitMultiplier);
+                    }
+                    else if(output < (this.min * limitMultiplier)) {
+                        output = (this.min * limitMultiplier);
+                    }
+                    else { // Update integral term only if the output is within the limit values. This is done to prevent integral windup.
+                        this.integral = integral;
+                    }
+
+                    /*Remember some variables for next time*/
+                    this.previous_error = error;
+
+                    return output;
+                }
+                windupCompute(input, setpoint, sens) {
+                    const sensitivity = 10001 - (sens * 2);
+                    const unitless_setpoint = Math.floor(((setpoint - 0) * 10000) / (sensitivity - 0));
+                    const unitless_input = Math.floor(((input - 0) * 10000) / (sensitivity - 0));
+                    const error = unitless_setpoint - unitless_input;
+
+                    this.integral += error;
+
+                    var output = 0;
+                    const limitMultiplier = 100;
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((this.max - this.bias) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    if (this.integral > output) { this.integral = output; }
+
+                    if(this.ki != 0)
+                    {
+                        output = Math.floor(((this.bias - this.min) * limitMultiplier * 100) / this.ki);
+                        if (output < 0) { output = 0; }
+                    }
+                    else { output = 0; }
+                    if (this.integral < -output) { this.integral = -output; }
+
+                    /*Compute PID Output*/
+                    output = (this.kp * error) + (this.ki * this.integral) + (this.kd * (error - this.previous_error));
+                    output = (this.bias * limitMultiplier) + Math.floor(output / 10); //output is % multipled by 1000. To get % with 2 decimal places, divide it by 10. Likewise, bias is % in whole numbers. Multiply it by 100 to get it with 2 places.
+
+                    if(output > (this.max * limitMultiplier)) { output  = (this.max * limitMultiplier);  }
+                    if(output < (this.min * limitMultiplier)) { output  = (this.min * limitMultiplier);  }
+
+                    /*Remember some variables for next time*/
+                    this.previous_error = error;
+
+                    return output;
+                }
+            }
+
+            function computeValues() {
+                algorithm = document.getElementById('algorithm').value;
+                var kp = document.getElementById('kp').value;
+                var ki = document.getElementById('ki').value;
+                var kd = document.getElementById('kd').value;
+                var sampleTime = 100;
+                var multipler = 1;
+
+                if (algorithm == 1) {
+                    frequency = Math.floor(1000/sampleTime);
+                    ki = Math.floor(ki / frequency);
+                    kd = kd * frequency;
+                }
+                else if (algorithm == 2) {
+                    sampleTime = 250;
+                    frequency = Math.floor(1000/sampleTime);
+                    ki = Math.floor(ki * 1024 / frequency);
+                    kd = kd * frequency;
+                }
+                else if (algorithm >= 3) {
+                    sampleTime = 20;
+                    multipler = 100;
+                }
+
+                document.getElementById('sampleTime').innerText = sampleTime
+
+                if (document.getElementById('reversed').checked) {
+                    kp = -kp;
+                    ki = -ki;
+                    kd = -kd;
+                }
+
+                myPID = new PID(kp,ki,kd);
+
+                var inputs = [];
+                var outputs = [];
+                var targets = [];
+                var input = 50 * multipler;
+                var setpoint = 60 * multipler;
+                var output = 0;
+
+                for (i = 0; i < 250; i++) {
+                    if (algorithm == 1) output = myPID.basicCompute(input, setpoint);
+                    else if (algorithm == 2) output = myPID.integerCompute(input, setpoint, document.getElementById('pOnE').checked);
+                    else if (algorithm == 3) output = myPID.idealCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else if (algorithm == 4) output = myPID.myCustomCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else if (algorithm == 5) output = myPID.windupCompute(input, setpoint, document.getElementById('sensitivity').value);
+                    else output = myPID.simpleCompute(input, setpoint);
+
+                    inputs.push({x:i*sampleTime/1000, y:input/multipler});
+                    outputs.push({x:i*sampleTime/1000, y:output/multipler});
+                    targets.push({x:i*sampleTime/1000, y:setpoint/multipler});
+
+                    if (i > 20) {
+                        if (document.getElementById('reversed').checked) {
+                            output = (myPID.max + myPID.min)*multipler - output;
+                        }
+                        input = Math.floor((input * 9 + output)/10);
+                    }
+                    if (i == 128) setpoint = 45 * multipler;
+                }
+
+                return [inputs, outputs, targets];
+            }
+
+            function updateDataSets() {
+                tables = computeValues();
+                scatterChart.data.datasets = [{
+                        label: 'Input',
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[0]
+                    },{
+                        label: 'Output',
+                        backgroundColor: 'rgb(99, 132, 255)',
+                        borderColor: 'rgb(99, 132, 255)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[1]
+                    },{
+                        label: 'Target',
+                        backgroundColor: 'rgb(132, 255, 99)',
+                        borderColor: 'rgb(132, 255, 99)',
+                        fill: false,
+                        tension: 0.2,
+                        showLine: true,
+                        data: tables[2]
+                    }];
+                scatterChart.update();
+            }
+        </script>
+    </head>
+    <body>
+        <div style="width: 75%; height: 75%;">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div>
+            <b>Algorithm</b>
+            <select id='algorithm'>
+                <option value=1>PID (EGO correction)</option>
+                <option value=2>integerPID (VVT & Idle)</option>
+                <option value=3 selected>integerPID_ideal (Boost)</option>
+                <option value=0>-----</option>
+                <option value=5>integerPID_ideal (windup problem)</option>
+                <option value=4>integerPID_ideal (fix reversed)</option>
+                <option value=0>simple</option>
+            </select>
+            <b>Sample time: </b><b id="sampleTime"></b><b>ms</b>
+        </div>
+        <div>
+            <b>P</b>
+            <input id="kp" type="number" value=20 min=0 max=200>
+            <b>I</b>
+            <input id="ki" type="number" value=2 min=0 max=200>
+            <b>D</b>
+            <input id="kd" type="number" value=10 min=0 max=200>
+        </div>
+        <div>
+            <b>Sensitivity</b>
+            <input id="sensitivity" type="number" value=2048 min=0 max=5000> (integerPID_ideal)<br>
+            <input id="pOnE" type="checkbox" name="pOnE" value="true"><b>pOnE</b> (integerPID)<br>
+            <input id="reversed" type="checkbox" name="reversed" value="true"><b>Reversed</b> (Lower input = Higher output)<br>
+        </div>
+        <div>
+            <button  id="apply" type="button">Apply</button >
+        </div>
+        <div>
+            <br><b>Algorithms</b><br>
+            PID: Simple PID algorithm, used by the EGO correction.<br>
+            integerPID: Slightly more advanced PID algorithm, used by VVT (pOnE off) & Idle (pOnE on).<br>
+            integerPID_ideal: Most advanced PID algorithm, used by the Boost controller. (Uses Sensitivity)<br>
+            integerPID_ideal (windup problem): Same as integerPID_ideal, but without the integral windup fix.<br>
+            integerPID_ideal (fix reversed): Same as integerPID_ideal, but with better "Reversed" behaviour.<br>
+            simple: My take at making a simple PID algorithm.<br>
+        </div>
+        <script>
+            var scatterChart = new Chart(document.getElementById('myChart').getContext('2d'), {
+                type: 'scatter',
+                data: { datasets: [] },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: 'linear',
+                            position: 'bottom',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'seconds'
+                            }
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                suggestedMin: 10,
+                                suggestedMax: 90
+                            }
+                        }]
+                    },
+                    elements: {
+                        point: {
+                            radius:0
+                        }
+                    }
+                }
+            });
+            updateDataSets();
+
+            document.getElementById('apply').addEventListener('click', function() {
+                updateDataSets();
+            });
+        </script>
+    </body>
+</html>
