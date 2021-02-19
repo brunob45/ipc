@@ -619,23 +619,25 @@ function compute() {
     // document.getElementById("inj7").innerText = channel7InjEnabled ? channel7InjDegrees : "Disabled";
     // document.getElementById("inj8").innerText = channel8InjEnabled ? channel8InjDegrees : "Disabled";
 
+    let angle_max = 720;
+    if (configPage2.strokes == TWO_STROKE) angle_max = 360;
+
     let dcPercent = getFloat("dcPercent");
+    let timing = getFloat("injTiming")+(angle_max/2);
     let channelInfo = [
-        {"open":channel1InjDegrees, "close":channel1InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel1InjEnabled},
-        {"open":channel2InjDegrees, "close":channel2InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel2InjEnabled},
-        {"open":channel3InjDegrees, "close":channel3InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel3InjEnabled},
-        {"open":channel4InjDegrees, "close":channel4InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel4InjEnabled},
-        {"open":channel5InjDegrees, "close":channel5InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel5InjEnabled},
-        {"open":channel6InjDegrees, "close":channel6InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel6InjEnabled},
-        {"open":channel7InjDegrees, "close":channel7InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel7InjEnabled},
-        {"open":channel8InjDegrees, "close":channel8InjDegrees + (dcPercent * req_fuel_uS)/100, "enabled":channel8InjEnabled}
+        {"open":timing + channel1InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel1InjDegrees, "enabled":channel1InjEnabled},
+        {"open":timing + channel2InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel2InjDegrees, "enabled":channel2InjEnabled},
+        {"open":timing + channel3InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel3InjDegrees, "enabled":channel3InjEnabled},
+        {"open":timing + channel4InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel4InjDegrees, "enabled":channel4InjEnabled},
+        {"open":timing + channel5InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel5InjDegrees, "enabled":channel5InjEnabled},
+        {"open":timing + channel6InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel6InjDegrees, "enabled":channel6InjEnabled},
+        {"open":timing + channel7InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel7InjDegrees, "enabled":channel7InjEnabled},
+        {"open":timing + channel8InjDegrees - (dcPercent * req_fuel_uS)/100, "close":timing + channel8InjDegrees, "enabled":channel8InjEnabled}
     ];
 
     var results = [[],[],[],[],[],[],[],[]];
 
     let i=0, j=0;
-    let angle_max = 720;
-    if (configPage2.strokes == TWO_STROKE) angle_max = 360;
     for (i = 0; i <= angle_max; i++)
     {
         for (j = 0; j < 8; j++)
@@ -643,7 +645,13 @@ function compute() {
             let injecting = channelInfo[j]["enabled"];
 
             let start = channelInfo[j]["open"] % CRANK_ANGLE_MAX_INJ;
-            let stop = channelInfo[j]["close"] % CRANK_ANGLE_MAX_INJ;
+            let stop = channelInfo[j]["close"];
+            while(start < 0)
+            {
+              start += CRANK_ANGLE_MAX_INJ;
+              stop += CRANK_ANGLE_MAX_INJ;
+            }
+            stop %= CRANK_ANGLE_MAX_INJ;
             let deg = i % CRANK_ANGLE_MAX_INJ;
 
             if (start < stop)
@@ -657,11 +665,11 @@ function compute() {
 
             if (injecting)
             {
-                results[j].push({x:i, y:1+j});
+                results[j].push({x:i-(angle_max/2), y:1+j});
             }
             else
             {
-                results[j].push({x:i, y:0+j});
+                results[j].push({x:i-(angle_max/2), y:0+j});
             }
         }
     }
@@ -679,8 +687,8 @@ function compute() {
                         labelString: 'degrees'
                     },
                     ticks: {
-                        suggestedMin: 0,
-                        suggestedMax: angle_max,
+                        suggestedMin: -(angle_max/2),
+                        suggestedMax: angle_max/2,
                         stepSize:90
                     }
                 }],

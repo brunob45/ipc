@@ -11,7 +11,7 @@
   <div class="wrapper">
     <div class="wrapper" style="float: left;">
       <div class="wrapper" style="float: left;">
-        <div class="square" style="float: top; width: 250px;">
+        <div class="square" style="float: top; width: 280px;">
           <h1>Engine Constants</h1>
           <p>
             Required Fuel
@@ -26,8 +26,8 @@
           <p>
             Squirts Per Engine Cycle
             <select id="nSquirts" onchange="compute()">
-              <option value=1 selected>1</option>
-              <option value=2>2</option>
+              <option value=1>1</option>
+              <option value=2 selected>2</option>
               <option value=3>3</option>
               <option value=4>4</option>
               <option value=5>5</option>
@@ -95,7 +95,7 @@
             </select>
           </p>
         </div>
-        <div class="square" style="float: bottom; margin-top: 5px; width: 250px;">
+        <div class="square" style="float: bottom; margin-top: 5px; width: 280px;">
           <h1>Other Constants</h1>
           <p>
             INJ_CHANNELS
@@ -113,14 +113,19 @@
           </p>
           (The number of outputs the physical board has.)
           <p>
+            Injection timing
+            <input id="injTiming" step="1" type="number" min="-359" max="360" value="355" onchange="compute();">
+          </p>
+          (Angle at which the injector closes.)
+          <p>
             Duty Cycle
             <input id="dcPercent" step="1" type="number" min="0" max="100" value="20" onchange="compute();">
           </p>
-          (Used to scale the pulses on the chart.)
+          (Only used to scale the pulses on the chart, not part of the injection settings.)
         </div>
       </div>
       <div class="square" style="float: right; margin-left:5px;">
-        <canvas id="myChart" width="500" height="500"></canvas>
+        <canvas id="myChart" width="600" height="500"></canvas>
       </div>
       <!--div class="square" style="float: right; margin-left:5px;">
         <h1>Results</h1>
