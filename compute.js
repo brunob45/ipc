@@ -88,11 +88,27 @@ function init()
 }
 
 function getFloat(name) {
+  if (document.getElementById(name) != null)
+  {
     return parseFloat(document.getElementById(name).value);
+  }
+  else
+  {
+    console.log("Cannot get value of input: " + name)
+    return 0;
+  }
 }
 
 function getBool(name) {
+  if (document.getElementById(name) != null)
+  {
     return document.getElementById(name).value != 0;
+  }
+  else
+  {
+    console.log("Cannot get value of input: " + name)
+    return false;
+  }
 }
 
 function speeduino_calc() {
