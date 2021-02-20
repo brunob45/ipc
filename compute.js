@@ -53,38 +53,45 @@ var scatterChart = null;
 
 function init()
 {
-  scatterChart = new Chart(document.getElementById('myChart'), {
-    type: 'scatter',
-    data: { datasets: [] },
-    options: {
-        scales: {
-            xAxes: [{
-                type: 'linear',
-                position: 'bottom',
-                scaleLabel: {
-                    display: true,
-                    labelString: 'degrees'
-                },
-                ticks: {
-                    suggestedMin: -360,
-                    suggestedMax: 360,
-                    stepSize:90
-                }
-            }],
-            yAxes: [{
-                ticks: {
-                    suggestedMin: 0,
-                    suggestedMax: 8
-                }
-            }]
-        },
-        elements: {
-            point: {
-                radius:0
-            }
-        }
-    }
-  });
+  if (document.getElementById('myChart') == null)
+  {
+    console.log("Cannot get chart handle.")
+  }
+  else
+  {
+    scatterChart = new Chart(document.getElementById('myChart'), {
+      type: 'scatter',
+      data: { datasets: [] },
+      options: {
+          scales: {
+              xAxes: [{
+                  type: 'linear',
+                  position: 'bottom',
+                  scaleLabel: {
+                      display: true,
+                      labelString: 'degrees'
+                  },
+                  ticks: {
+                      suggestedMin: -360,
+                      suggestedMax: 360,
+                      stepSize:90
+                  }
+              }],
+              yAxes: [{
+                  ticks: {
+                      suggestedMin: 0,
+                      suggestedMax: 8
+                  }
+              }]
+          },
+          elements: {
+              point: {
+                  radius:0
+              }
+          }
+      }
+    });
+  }
 }
 
 function getFloat(name) {
