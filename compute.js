@@ -49,6 +49,44 @@ var configPage10 = class page10 {}
 var currentStatus = class cs {}
 var req_fuel_uS = 0;
 
+var scatterChart = null;
+
+function init()
+{
+  scatterChart = new Chart(document.getElementById('myChart'), {
+    type: 'scatter',
+    data: { datasets: [] },
+    options: {
+        scales: {
+            xAxes: [{
+                type: 'linear',
+                position: 'bottom',
+                scaleLabel: {
+                    display: true,
+                    labelString: 'degrees'
+                },
+                ticks: {
+                    suggestedMin: -360,
+                    suggestedMax: 360,
+                    stepSize:90
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 8
+                }
+            }]
+        },
+        elements: {
+            point: {
+                radius:0
+            }
+        }
+    }
+  });
+}
+
 function getFloat(name) {
     return parseFloat(document.getElementById(name).value);
 }
@@ -58,6 +96,9 @@ function getBool(name) {
 }
 
 function speeduino_calc() {
+
+    req_fuel_uS = configPage2.reqFuel * 100; //Convert to uS and an int. This is the only variable to be used in calculations
+
     if(configPage2.strokes == FOUR_STROKE)
     {
       //Default is 1 squirt per revolution, so we halve the given req-fuel figure (Which would be over 2 revolutions)
@@ -525,8 +566,6 @@ function compute() {
     INJ_CHANNELS = getFloat("INJ_CHANNELS");
     IGN_CHANNELS = 4;
 
-    req_fuel_uS = getFloat("reqFuel") * 100; //Convert to uS and an int. This is the only variable to be used in calculations
-
     configPage2.injLayout = getFloat("paired");
     configPage2.nCylinders = getFloat("nCylinders");
     configPage2.divider = Math.floor(configPage2.nCylinders / getFloat("nSquirts"));
@@ -534,10 +573,17 @@ function compute() {
     configPage2.injTiming = getBool("alternate");
     configPage2.engineType = getFloat("engine_type");
 
+    if (configPage2.injTiming)
+      configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 20)/10;
+    else
+      configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 10)/10;
+
     configPage4.sparkMode = IGN_MODE_WASTED;
     configPage4.IgInv = GOING_HIGH;
     configPage10.stagingEnabled = false;
 
+    if (document.getElementById("actualms") != null)
+      document.getElementById("actualms").value = configPage2.reqFuel;
 
     CRANK_ANGLE_MAX = 720;
     CRANK_ANGLE_MAX_IGN = 360;
@@ -608,17 +654,6 @@ function compute() {
         }
     }
 
-    // document.getElementById("PW").innerText = req_fuel_uS / 100; // + openTime;
-    // document.getElementById("cycle").innerText = CRANK_ANGLE_MAX_INJ; //gap * nCylinders;
-    // document.getElementById("inj1").innerText = channel1InjEnabled ? channel1InjDegrees : "Disabled";
-    // document.getElementById("inj2").innerText = channel2InjEnabled ? channel2InjDegrees : "Disabled";
-    // document.getElementById("inj3").innerText = channel3InjEnabled ? channel3InjDegrees : "Disabled";
-    // document.getElementById("inj4").innerText = channel4InjEnabled ? channel4InjDegrees : "Disabled";
-    // document.getElementById("inj5").innerText = channel5InjEnabled ? channel5InjDegrees : "Disabled";
-    // document.getElementById("inj6").innerText = channel6InjEnabled ? channel6InjDegrees : "Disabled";
-    // document.getElementById("inj7").innerText = channel7InjEnabled ? channel7InjDegrees : "Disabled";
-    // document.getElementById("inj8").innerText = channel8InjEnabled ? channel8InjDegrees : "Disabled";
-
     let angle_max = 720;
     if (configPage2.strokes == TWO_STROKE) angle_max = 360;
 
@@ -674,38 +709,10 @@ function compute() {
         }
     }
 
-    var scatterChart = new Chart(document.getElementById('myChart'), {
-        type: 'scatter',
-        data: { datasets: [] },
-        options: {
-            scales: {
-                xAxes: [{
-                    type: 'linear',
-                    position: 'bottom',
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'degrees'
-                    },
-                    ticks: {
-                        suggestedMin: -(angle_max/2),
-                        suggestedMax: angle_max/2,
-                        stepSize:90
-                    }
-                }],
-                yAxes: [{
-                    ticks: {
-                        suggestedMin: 0,
-                        suggestedMax: 8
-                    }
-                }]
-            },
-            elements: {
-                point: {
-                    radius:0
-                }
-            }
-        }
-    });
+    if (scatterChart == null)
+    {
+      init();
+    }
 
     let colors = [
         'rgb(255, 0, 0)',
