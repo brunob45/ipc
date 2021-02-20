@@ -51,6 +51,10 @@ var req_fuel_uS = 0;
 
 var scatterChart = null;
 
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
 function init() {
   if (document.getElementById('myChart') == null) {
     console.log("Cannot get chart handle.")
@@ -625,11 +629,13 @@ function compute() {
     }
   }
 
-  let angle_max = 720;
-  if (configPage2.strokes == TWO_STROKE) angle_max = 360;
+  let angle_min = -360, angle_max = 360;
+  if (configPage2.strokes == TWO_STROKE) {
+    angle_min = 0;
+  }
 
   let dcPercent = getFloat("dcPercent");
-  let timing = getFloat("injTiming") + (angle_max / 2);
+  let timing = getFloat("injTiming");
   let channelInfo = [
     { "open": timing + channel1InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel1InjDegrees, "enabled": channel1InjEnabled },
     { "open": timing + channel2InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel2InjDegrees, "enabled": channel2InjEnabled },
@@ -643,19 +649,14 @@ function compute() {
 
   var results = [[], [], [], [], [], [], [], []];
 
-  let i = 0, j = 0;
-  for (i = 0; i <= angle_max; i++) {
+  let i, j;
+  for (i = angle_min; i <= angle_max; i++) {
     for (j = 0; j < 8; j++) {
       let injecting = channelInfo[j]["enabled"];
 
-      let start = channelInfo[j]["open"] % CRANK_ANGLE_MAX_INJ;
-      let stop = channelInfo[j]["close"];
-      while (start < 0) {
-        start += CRANK_ANGLE_MAX_INJ;
-        stop += CRANK_ANGLE_MAX_INJ;
-      }
-      stop %= CRANK_ANGLE_MAX_INJ;
-      let deg = i % CRANK_ANGLE_MAX_INJ;
+      let start = mod(channelInfo[j]["open"], CRANK_ANGLE_MAX_INJ);
+      let stop = mod(channelInfo[j]["close"], CRANK_ANGLE_MAX_INJ);
+      let deg = mod(i, CRANK_ANGLE_MAX_INJ);
 
       if (start < stop) {
         injecting &= ((deg > start) && (deg < stop));
@@ -665,10 +666,10 @@ function compute() {
       }
 
       if (injecting) {
-        results[j].push({ x: i - (angle_max / 2), y: 1 + j });
+        results[j].push({ x: i, y: 1 + j });
       }
       else {
-        results[j].push({ x: i - (angle_max / 2), y: 0 + j });
+        results[j].push({ x: i, y: 0 + j });
       }
     }
   }
@@ -705,6 +706,7 @@ function compute() {
         );
       }
     }
+    scatterChart.options.scales.xAxes[0].ticks.suggestedMin = angle_min;
     scatterChart.update();
   }
 }
