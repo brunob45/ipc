@@ -554,16 +554,17 @@ function compute() {
   configPage2.engineType = getFloat("engine_type");
 
   if (configPage2.injTiming)
-    configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 20) / 10;
+    configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 20);
   else
-    configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 10) / 10;
+    configPage2.reqFuel = Math.floor(getFloat("reqFuel") / getFloat("nSquirts") * 10);
 
   configPage4.sparkMode = IGN_MODE_WASTED;
   configPage4.IgInv = GOING_HIGH;
   configPage10.stagingEnabled = false;
 
-  if (document.getElementById("actualms") != null)
-    document.getElementById("actualms").value = configPage2.reqFuel;
+  if (document.getElementById("actualms") != null) {
+    document.getElementById("actualms").value = (configPage2.reqFuel/10).toFixed(1);
+  }
 
   CRANK_ANGLE_MAX = 720;
   CRANK_ANGLE_MAX_IGN = 360;
@@ -588,6 +589,10 @@ function compute() {
 
 
   speeduino_calc();
+
+  if (document.getElementById("req_fuel_uS") != null) {
+    document.getElementById("req_fuel_uS").innerText = "Actual pulse width at 100% VE: " +(req_fuel_uS/1000).toFixed(3) + "ms.";
+  }
 
   if (configPage2.injLayout == INJ_SEMISEQUENTIAL) {
     //Semi-Sequential injection. Currently possible with 4, 6 and 8 cylinders. 5 cylinder is a special case
@@ -637,42 +642,15 @@ function compute() {
   let dcPercent = getFloat("dcPercent");
   let timing = getFloat("injTiming");
   let channelInfo = [
-    { "open": timing + channel1InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel1InjDegrees, "enabled": channel1InjEnabled },
-    { "open": timing + channel2InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel2InjDegrees, "enabled": channel2InjEnabled },
-    { "open": timing + channel3InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel3InjDegrees, "enabled": channel3InjEnabled },
-    { "open": timing + channel4InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel4InjDegrees, "enabled": channel4InjEnabled },
-    { "open": timing + channel5InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel5InjDegrees, "enabled": channel5InjEnabled },
-    { "open": timing + channel6InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel6InjDegrees, "enabled": channel6InjEnabled },
-    { "open": timing + channel7InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel7InjDegrees, "enabled": channel7InjEnabled },
-    { "open": timing + channel8InjDegrees - (dcPercent * req_fuel_uS) / 100, "close": timing + channel8InjDegrees, "enabled": channel8InjEnabled }
+    { "open": timing + channel1InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel1InjDegrees, "enabled": channel1InjEnabled },
+    { "open": timing + channel2InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel2InjDegrees, "enabled": channel2InjEnabled },
+    { "open": timing + channel3InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel3InjDegrees, "enabled": channel3InjEnabled },
+    { "open": timing + channel4InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel4InjDegrees, "enabled": channel4InjEnabled },
+    { "open": timing + channel5InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel5InjDegrees, "enabled": channel5InjEnabled },
+    { "open": timing + channel6InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel6InjDegrees, "enabled": channel6InjEnabled },
+    { "open": timing + channel7InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel7InjDegrees, "enabled": channel7InjEnabled },
+    { "open": timing + channel8InjDegrees - (dcPercent * CRANK_ANGLE_MAX_INJ) / 100, "close": timing + channel8InjDegrees, "enabled": channel8InjEnabled }
   ];
-
-  var results = [[], [], [], [], [], [], [], []];
-
-  let i, j;
-  for (i = angle_min; i <= angle_max; i++) {
-    for (j = 0; j < 8; j++) {
-      let injecting = channelInfo[j]["enabled"];
-
-      let start = mod(channelInfo[j]["open"], CRANK_ANGLE_MAX_INJ);
-      let stop = mod(channelInfo[j]["close"], CRANK_ANGLE_MAX_INJ);
-      let deg = mod(i, CRANK_ANGLE_MAX_INJ);
-
-      if (start < stop) {
-        injecting &= ((deg > start) && (deg < stop));
-      }
-      else {
-        injecting &= ((deg > start) || (deg < stop));
-      }
-
-      if (injecting) {
-        results[j].push({ x: i, y: 1 + j });
-      }
-      else {
-        results[j].push({ x: i, y: 0 + j });
-      }
-    }
-  }
 
   if (scatterChart == null) {
     init();
@@ -689,24 +667,52 @@ function compute() {
       'rgb(255, 255, 255)',
       'rgb(0, 0, 0)',
     ];
+
     scatterChart.data.datasets = [];
-    i = 0;
-    for (i = 0; i < 8; i++) {
-      if (channelInfo[i]["enabled"]) {
+
+    let i, j;
+    for (j = 0; j < 8; j++) {
+      if (channelInfo[j]["enabled"]) {
+        let datapoints = []
+        for (i = angle_min; i <= angle_max; i++) {
+
+          let start = mod(channelInfo[j]["open"], CRANK_ANGLE_MAX_INJ);
+          let stop = mod(channelInfo[j]["close"], CRANK_ANGLE_MAX_INJ);
+          let deg = mod(i, CRANK_ANGLE_MAX_INJ);
+
+          let injecting;
+          if (start < stop) {
+            injecting = ((deg > start) && (deg < stop));
+          }
+          else {
+            injecting = ((deg > start) || (deg < stop));
+          }
+
+          if (injecting) {
+            datapoints.push({ x: i, y: 1 + j });
+          }
+          else {
+            datapoints.push({ x: i, y: 0 + j });
+          }
+        }
+
         scatterChart.data.datasets.push(
           {
-            label: 'Channel ' + (i + 1).toString(),
-            backgroundColor: colors[i],
-            borderColor: colors[i],
+            label: 'Channel ' + (j + 1).toString(),
+            backgroundColor: colors[j],
+            borderColor: colors[j],
             fill: false,
             tension: 0.2,
             showLine: true,
-            data: results[i]
+            data: datapoints
           }
         );
       }
     }
+
     scatterChart.options.scales.xAxes[0].ticks.suggestedMin = angle_min;
     scatterChart.update();
   }
 }
+
+function disablePaired(nChannels) {}
